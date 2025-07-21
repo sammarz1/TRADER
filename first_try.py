@@ -5,6 +5,11 @@ from bs4 import BeautifulSoup
 from vaderSentiment.vaderSentiment import SentimentIntensityAnalyzer
 import alpaca_trade_api as tradeapi
 import logging
+import os
+
+ALPACA_KEY = os.getenv("ALPACA_KEY")
+ALPACA_SECRET = os.getenv("ALPACA_SECRET")
+
 
 # === CONFIG ===
 TICKERS = {
@@ -30,8 +35,6 @@ TICKERS = {
     "T": "AT&T"
 }
 
-ALPACA_KEY = "PKCG5NEYDV4BC0AHUU3E"
-ALPACA_SECRET = "PWrMYPAMEkklteXEvco4AhgpRObKWSjqTWQ6v3T0"
 ALPACA_BASE_URL = "https://paper-api.alpaca.markets"
 MAX_POSITION_PCT = 0.1       # Max 10% of portfolio in any single stock
 MAX_TOTAL_INVESTMENT_PCT = 0.8  # Only invest up to 80% of total cash
