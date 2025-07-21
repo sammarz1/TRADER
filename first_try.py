@@ -7,10 +7,6 @@ import alpaca_trade_api as tradeapi
 import logging
 import os
 
-ALPACA_KEY = os.getenv("ALPACA_KEY")
-ALPACA_SECRET = os.getenv("ALPACA_SECRET")
-
-
 # === CONFIG ===
 TICKERS = {
     "AAPL": "Apple",
@@ -35,6 +31,8 @@ TICKERS = {
     "T": "AT&T"
 }
 
+ALPACA_KEY = os.getenv("ALPACA_KEY")
+ALPACA_SECRET = os.getenv("ALPACA_SECRET")
 ALPACA_BASE_URL = "https://paper-api.alpaca.markets"
 MAX_POSITION_PCT = 0.1       # Max 10% of portfolio in any single stock
 MAX_TOTAL_INVESTMENT_PCT = 0.8  # Only invest up to 80% of total cash
@@ -114,7 +112,7 @@ def run_sentiment_trader():
                 current_qty = 0  # No current position
 
             # === SELL if sentiment is very negative and position exists ===
-            if sentiment_score <= SELL_THRESHOLD and current_qty > 0:
+            if sentiment_score <= SELL_THRESHOLDS and current_qty > 0:
                 try:
                     alpaca.submit_order(
                         symbol=ticker,
@@ -126,7 +124,7 @@ def run_sentiment_trader():
                     logging.info(f"Placed SELL order: {current_qty} shares of {ticker} due to negative sentiment.")
                 except Exception as e:
                     logging.error(f"Sell failed for {ticker}: {e}")
-                continue  # Move to next stock after selling
+                continue  # Skip to next stock after selling
 
             # === BUY if sentiment is strong ===
             qty = decide_quantity(sentiment_score)
@@ -148,12 +146,11 @@ def run_sentiment_trader():
             place_order(ticker, qty)
             total_invested += proposed_value
 
-            time.sleep(2)
+            time.sleep(2)  # Short pause between orders
 
         except Exception as e:
             logging.error(f"Error with {ticker}: {e}")
 
-        time.sleep(6 * 3600)
 if __name__ == "__main__":
     try:
         run_sentiment_trader()
