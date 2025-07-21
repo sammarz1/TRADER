@@ -15,7 +15,6 @@ TICKERS = {
     "JPM": "JPMorgan Chase",
     "PG": "Procter & Gamble",
     "BA": "Boeing",
-    "DIS": "Walt Disney",
     "NVDA": "NVIDIA",
     "HD": "Home Depot",
     "KO": "Coca-Cola",
