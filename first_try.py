@@ -33,11 +33,10 @@ TICKERS = {
 ALPACA_KEY = os.getenv("ALPACA_KEY")
 ALPACA_SECRET = os.getenv("ALPACA_SECRET")
 ALPACA_BASE_URL = "https://paper-api.alpaca.markets"
-MAX_POSITION_PCT = 0.05      # Max 10% of portfolio in any single stock
-MAX_TOTAL_INVESTMENT_PCT = 0.8  # Only invest up to 80% of total cash
-BUY_THRESHOLDS = [(0.35, 10), (0.25, 5), (0.175, 2)]  # (sentiment score, shares)
-SELL_THRESHOLDS = -0.175  # Add at top
-
+MAX_POSITION_PCT = 0.05
+MAX_TOTAL_INVESTMENT_PCT = 0.8
+BUY_THRESHOLDS = [(0.35, 10), (0.25, 5), (0.175, 2)]
+SELL_THRESHOLDS = -0.175
 
 # === SETUP ===
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(message)s")
@@ -45,8 +44,17 @@ analyzer = SentimentIntensityAnalyzer()
 alpaca = tradeapi.REST(ALPACA_KEY, ALPACA_SECRET, base_url=ALPACA_BASE_URL)
 
 # === HELPER FUNCTIONS ===
-def get_google_news_headlines(company_name, num_articles=15):
+def get_google_news_headlines(company_name, num_articles=15, start_date=None, end_date=None):
     query = company_name.replace(" ", "+")
+    date_filters = []
+    if start_date:
+        date_filters.append(f"after:{start_date}")
+    if end_date:
+        date_filters.append(f"before:{end_date}")
+
+    if date_filters:
+        query += "+" + "+".join(date_filters)
+
     rss_url = f"https://news.google.com/rss/search?q={query}&hl=en-US&gl=US&ceid=US:en"
     response = requests.get(rss_url)
     if response.status_code != 200:
@@ -72,7 +80,7 @@ def get_position_value(ticker, current_price):
         position = alpaca.get_position(ticker)
         return float(position.qty) * current_price
     except:
-        return 0  # No position
+        return 0
 
 def get_current_price(ticker):
     barset = alpaca.get_latest_trade(ticker)
@@ -95,11 +103,14 @@ def run_sentiment_trader():
     max_total_to_invest = portfolio_value * MAX_TOTAL_INVESTMENT_PCT
     total_invested = 0
 
+    today = datetime.date.today().strftime("%Y-%m-%d")
+    tomorrow = (datetime.date.today() + datetime.timedelta(days=1)).strftime("%Y-%m-%d")
+
     logging.info(f"Portfolio Value: ${portfolio_value:.2f}, Cash: ${cash_available:.2f}")
 
     for ticker, name in TICKERS.items():
         try:
-            headlines = get_google_news_headlines(name)
+            headlines = get_google_news_headlines(name, start_date=today, end_date=tomorrow)
             sentiment_score = analyze_sentiment(headlines)
             logging.info(f"{ticker} Sentiment Score: {sentiment_score:.3f}")
 
@@ -108,9 +119,8 @@ def run_sentiment_trader():
                 position = alpaca.get_position(ticker)
                 current_qty = int(float(position.qty))
             except:
-                current_qty = 0  # No current position
+                current_qty = 0
 
-            # === SELL if sentiment is very negative and position exists ===
             if sentiment_score <= SELL_THRESHOLDS and current_qty > 0:
                 try:
                     alpaca.submit_order(
@@ -123,9 +133,8 @@ def run_sentiment_trader():
                     logging.info(f"Placed SELL order: {current_qty} shares of {ticker} due to negative sentiment.")
                 except Exception as e:
                     logging.error(f"Sell failed for {ticker}: {e}")
-                continue  # Skip to next stock after selling
+                continue
 
-            # === BUY if sentiment is strong ===
             qty = decide_quantity(sentiment_score)
             if qty == 0:
                 logging.info(f"{ticker} sentiment not strong enough to buy. Skipping.")
@@ -145,7 +154,7 @@ def run_sentiment_trader():
             place_order(ticker, qty)
             total_invested += proposed_value
 
-            time.sleep(2)  # Short pause between orders
+            time.sleep(2)
 
         except Exception as e:
             logging.error(f"Error with {ticker}: {e}")
