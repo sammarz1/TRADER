@@ -44,7 +44,7 @@ analyzer = SentimentIntensityAnalyzer()
 alpaca = tradeapi.REST(ALPACA_KEY, ALPACA_SECRET, base_url=ALPACA_BASE_URL)
 
 # === HELPER FUNCTIONS ===
-def get_google_news_headlines(company_name, num_articles=15, start_date=None, end_date=None):
+def get_google_news_headlines(company_name, num_articles=50, start_date=None, end_date=None):
     query = company_name.replace(" ", "+")
     date_filters = []
     if start_date:
