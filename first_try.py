@@ -36,7 +36,7 @@ ALPACA_BASE_URL = "https://paper-api.alpaca.markets"
 MAX_POSITION_PCT = 0.1
 MAX_TOTAL_INVESTMENT_PCT = 0.8
 BUY_THRESHOLDS = [(0.35, 10), (0.25, 5), (0.175, 2)]
-SELL_THRESHOLDS = -0.125
+SELL_THRESHOLDS = 0
 
 # === SETUP ===
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(message)s")
